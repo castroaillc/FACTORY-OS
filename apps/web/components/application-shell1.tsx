@@ -13,6 +13,7 @@ import {
   Globe2,
   HelpCircle,
   LayoutDashboard,
+  Bot,
   LogOut,
   Settings,
   Sparkles,
@@ -22,7 +23,7 @@ import {
 } from "lucide-react"
 import { MotionConfig, motion } from "motion/react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 import { cn } from "cn"
 
@@ -146,6 +147,7 @@ const sidebarData: SidebarData = {
           href: "/dashboard",
           isActive: true,
         },
+        { label: "Agents", icon: Bot, href: "/dashboard/agents" },
         { label: "Tasks", icon: ClipboardList, href: "#" },
         { label: "Roadmap", icon: BarChart3, href: "#" },
       ],
@@ -277,13 +279,18 @@ const NavMenuItem = ({
           isActive={isActive}
           className={buttonMotion}
           render={
-            <a
-              href={item.href}
-              onClick={(event) => {
-                event.preventDefault()
-                onNavigate(item.label)
-              }}
-            />
+            // Real routes navigate; "#" items are the block's demo entries
+            item.href.startsWith("/") ? (
+              <Link href={item.href} onClick={() => onNavigate(item.label)} />
+            ) : (
+              <a
+                href={item.href}
+                onClick={(event) => {
+                  event.preventDefault()
+                  onNavigate(item.label)
+                }}
+              />
+            )
           }
         >
           {isActive && <ActivePill />}
@@ -484,6 +491,17 @@ const findTrail = (label: string) => {
   return [label]
 }
 
+// The nav item for the current URL: longest matching route wins
+const routedLabel = (pathname: string) =>
+  sidebarData.navGroups
+    .flatMap((group) => group.items)
+    .filter(
+      (item) =>
+        item.href.startsWith("/") &&
+        (pathname === item.href || pathname.startsWith(`${item.href}/`))
+    )
+    .sort((a, b) => b.href.length - a.href.length)[0]?.label
+
 const initialActive =
   sidebarData.navGroups
     .flatMap((group) => group.items)
@@ -500,8 +518,15 @@ export function ApplicationShell1({
   children,
   className,
 }: ApplicationShell1Props) {
-  const [active, setActive] = React.useState(initialActive)
+  const pathname = usePathname()
+  const [active, setActive] = React.useState(
+    () => routedLabel(pathname) ?? initialActive
+  )
   const trail = findTrail(active)
+
+  React.useEffect(() => {
+    setActive(routedLabel(pathname) ?? initialActive)
+  }, [pathname])
 
   return (
     <MotionConfig reducedMotion="user">

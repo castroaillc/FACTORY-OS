@@ -10,6 +10,9 @@ import type { SandboxProxyConfig } from "langsmith/sandbox"
 
 import { config } from "./config.js"
 
+/** The repo a sandbox is bound to. */
+export type SandboxTarget = { repo: string; baseBranch: string }
+
 /** Quote a value for a POSIX shell command line. */
 export function sh(value: string) {
   return `'${value.replace(/'/g, `'\\''`)}'`
@@ -20,18 +23,18 @@ export function sh(value: string) {
  * opaque (write-only) secret and injected only into git traffic for this one
  * repo, so it never exists inside the sandbox and can't be used elsewhere.
  */
-export function buildProxyConfig(): SandboxProxyConfig {
+export function buildProxyConfig({ repo }: SandboxTarget): SandboxProxyConfig {
   const rules: SandboxProxyConfig["rules"] = []
 
-  if (config.GITHUB_TOKEN && config.GITHUB_REPO) {
+  if (config.GITHUB_TOKEN && repo) {
     const basic = Buffer.from(`x-access-token:${config.GITHUB_TOKEN}`).toString(
       "base64"
     )
     rules.push({
       name: "github-git",
-      description: `Git over HTTPS for ${config.GITHUB_REPO}`,
+      description: `Git over HTTPS for ${repo}`,
       match_hosts: ["github.com"],
-      match_paths: [`/${config.GITHUB_REPO}.git/*`, `/${config.GITHUB_REPO}/*`],
+      match_paths: [`/${repo}.git/*`, `/${repo}/*`],
       headers: [
         { name: "Authorization", type: "opaque", value: `Basic ${basic}` },
       ],
@@ -53,15 +56,20 @@ async function run(sandbox: SandboxBackendProtocolV2, command: string) {
 }
 
 /** Clone the repo into the sandbox and configure git identity. Idempotent. */
-async function prepareWorkspace(sandbox: SandboxBackendProtocolV2) {
+async function prepareWorkspace(
+  sandbox: SandboxBackendProtocolV2,
+  { repo, baseBranch }: SandboxTarget
+) {
   const dir = sh(config.SANDBOX_WORKDIR)
   const hasRepo = await sandbox.execute(`test -d ${dir}/.git`)
   if (hasRepo.exitCode !== 0) {
-    if (!config.GITHUB_REPO) throw new Error("GITHUB_REPO is not set")
+    if (!repo) {
+      throw new Error("No GitHub repo configured for this agent (GITHUB_REPO)")
+    }
     await run(
       sandbox,
-      `git clone --branch ${sh(config.GITHUB_BASE_BRANCH)} ${sh(
-        `https://github.com/${config.GITHUB_REPO}.git`
+      `git clone --branch ${sh(baseBranch)} ${sh(
+        `https://github.com/${repo}.git`
       )} ${dir}`
     )
   }
@@ -87,6 +95,7 @@ export class TeamSandbox extends BaseSandbox {
   #ready: Promise<SandboxBackendProtocolV2> | null = null
 
   constructor(
+    readonly target: SandboxTarget,
     private factory: () => Promise<SandboxBackendProtocolV2> = () =>
       LangSmithSandbox.create({
         snapshotId: config.SANDBOX_SNAPSHOT_ID,
@@ -95,7 +104,7 @@ export class TeamSandbox extends BaseSandbox {
         idleTtlSeconds: config.SANDBOX_IDLE_TTL_SECONDS,
         deleteAfterStopSeconds: config.SANDBOX_DELETE_AFTER_STOP_SECONDS,
         defaultTimeout: config.SANDBOX_COMMAND_TIMEOUT_SECONDS,
-        proxyConfig: buildProxyConfig(),
+        proxyConfig: buildProxyConfig(target),
       })
   ) {
     super()
@@ -120,7 +129,7 @@ export class TeamSandbox extends BaseSandbox {
     this.#ready ??= (async () => {
       const created = await this.factory()
       this.#inner = created
-      await prepareWorkspace(created)
+      await prepareWorkspace(created, this.target)
       return created
     })().catch((error) => {
       this.#ready = null
@@ -160,5 +169,16 @@ export class TeamSandbox extends BaseSandbox {
   }
 }
 
-// One sandbox per process, shared by the team and the git tools
-export const teamSandbox = new TeamSandbox()
+// One sandbox per repo + base branch per process. Threads of assistants that
+// point at the same repo share it, so run one task per repo at a time.
+const sandboxes = new Map<string, TeamSandbox>()
+
+export function getTeamSandbox(target: SandboxTarget) {
+  const key = `${target.repo}#${target.baseBranch}`
+  let sandbox = sandboxes.get(key)
+  if (!sandbox) {
+    sandbox = new TeamSandbox(target)
+    sandboxes.set(key, sandbox)
+  }
+  return sandbox
+}

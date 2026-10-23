@@ -67,6 +67,23 @@ pnpm --filter agents studio
 
 The sandbox is created on the first tool call. In Studio, all threads in one server process share a sandbox, so run one task at a time. Approvals show up as interrupts, and you resume them with `{ "decisions": [{ "type": "approve" }] }` or `{ "type": "reject", "message": "…" }`.
 
+## Dashboard
+
+The web app has an agents UI at **/dashboard/agents**:
+
+- **Agents:** create, configure and delete agents. Each agent is a LangGraph *assistant* of the `sdl_team` graph with its own settings: repo, base branch, lead and sub-agent models, and extra instructions. `src/graph.ts` is a factory that builds the team from each assistant's `config.configurable`. Unset fields fall back to this server's env.
+- **Chat:** conversations per agent with streamed replies, live sub-agent cards, the lead's plan (todos), and approve/edit/reject cards for `git_push` and `github_open_pull_request`.
+
+The browser never talks to this server directly. `apps/web` proxies `/api/agents/*` and checks the user's session and `AGENTS_ADMIN_EMAILS`. Configure it in `apps/web/.env.local`:
+
+```bash
+LANGGRAPH_API_URL=http://localhost:2024   # or your LangSmith deployment URL
+LANGGRAPH_API_KEY=                        # deployment only
+AGENTS_ADMIN_EMAILS=you@example.com       # verified emails required in production
+```
+
+Model keys and the GitHub token stay on this server. The dashboard only stores settings. Set `GITHUB_ALLOWED_REPOS` here to limit which repos the dashboard can point agents at.
+
 ## Customize
 
 - **Prompts:** `src/prompts.ts`
