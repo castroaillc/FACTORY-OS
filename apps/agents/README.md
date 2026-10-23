@@ -53,7 +53,12 @@ cp apps/agents/.env.example apps/agents/.env
    ```
 
 3. **Models (bring your own keys):** set `ORCHESTRATOR_MODEL` and `SUBAGENT_MODEL` to any `provider:model` and add the matching key. For example, `anthropic:claude-opus-5-5` needs `ANTHROPIC_API_KEY`, and `openai:gpt-5` needs `OPENAI_API_KEY`.
-4. **GitHub:** set `GITHUB_REPO` (owner/name) and a fine-grained `GITHUB_TOKEN` scoped to that repo, with Contents and Pull requests set to read/write.
+4. **Local models (optional):** run models on the agent server's machine with no API key:
+   - **Ollama:** `ollama pull gpt-oss:20b`, then use `ollama:gpt-oss:20b`. The server sends `OLLAMA_NUM_CTX` (default 32768), because Ollama's small default context silently truncates agent prompts.
+   - **LM Studio, vLLM, llama.cpp, LocalAI:** start the OpenAI-compatible server, set `OPENAI_COMPATIBLE_BASE_URL`, and use `openai-compatible:<model>`.
+
+   Pick models that support **tool calling**: gpt-oss, qwen3, qwen2.5-coder and llama3.1+ work; plain chat models don't. You can mix providers, for example a hosted lead with local sub-agents. Local models must be reachable from the agent server, so a LangSmith-hosted deployment can't use `localhost` models.
+5. **GitHub:** set `GITHUB_REPO` (owner/name) and a fine-grained `GITHUB_TOKEN` scoped to that repo, with Contents and Pull requests set to read/write.
 
 ## Run
 

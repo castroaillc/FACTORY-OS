@@ -20,6 +20,20 @@ const envSchema = z.object({
   ORCHESTRATOR_MODEL: z.string().default("anthropic:claude-opus-5-5"),
   SUBAGENT_MODEL: z.string().default("anthropic:claude-sonnet-5-5"),
 
+  // Local models. URLs are env-only so the dashboard can't point the server
+  // at arbitrary hosts.
+  // "ollama:<model>", e.g. ollama:gpt-oss:20b or ollama:qwen3:32b
+  OLLAMA_BASE_URL: z.string().url().default("http://localhost:11434"),
+  // Ollama's default context (2-4K tokens) silently truncates agent prompts
+  OLLAMA_NUM_CTX: z.coerce.number().int().positive().default(32768),
+  OLLAMA_KEEP_ALIVE: z.string().default("30m"),
+  // "openai-compatible:<model>" for LM Studio, vLLM, llama.cpp, LocalAI, ...
+  OPENAI_COMPATIBLE_BASE_URL: z
+    .string()
+    .url()
+    .default("http://localhost:1234/v1"),
+  OPENAI_COMPATIBLE_API_KEY: z.string().optional(),
+
   // Repo the team works on, cloned into the sandbox
   GITHUB_REPO: z
     .string()
