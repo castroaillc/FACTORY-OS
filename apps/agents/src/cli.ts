@@ -7,8 +7,8 @@ import { AIMessage, type BaseMessage } from "@langchain/core/messages"
 import { Command, MemorySaver, type StateSnapshot } from "@langchain/langgraph"
 import type { Decision, HITLRequest } from "langchain"
 
-import { config } from "./config.js"
-import { teamSandbox } from "./sandbox.js"
+import { getTeamSandbox } from "./sandbox.js"
+import { resolveSettings } from "./settings.js"
 import { createSdlTeam } from "./team.js"
 
 const task = process.argv.slice(2).join(" ").trim()
@@ -17,14 +17,22 @@ if (!task) {
   process.exit(1)
 }
 
-const agent = createSdlTeam({ checkpointer: new MemorySaver() })
+const settings = resolveSettings()
+const sandbox = getTeamSandbox({
+  repo: settings.githubRepo,
+  baseBranch: settings.baseBranch,
+})
+const agent = createSdlTeam(settings, {
+  checkpointer: new MemorySaver(),
+  sandbox,
+})
 const runConfig = {
   configurable: { thread_id: randomUUID() },
   recursionLimit: 500,
   // Shows up in LangSmith when LANGSMITH_TRACING=true
   runName: "sdl-team",
   tags: ["sdl-team", "cli"],
-  metadata: { repo: config.GITHUB_REPO, task },
+  metadata: { repo: settings.githubRepo, task },
 }
 
 const rl = createInterface({ input: process.stdin, output: process.stdout })
@@ -107,7 +115,7 @@ try {
   }
 } finally {
   rl.close()
-  await teamSandbox.dispose()
+  await sandbox.dispose()
   // Make sure LangSmith receives the full trace before exiting
   await awaitAllCallbacks()
 }

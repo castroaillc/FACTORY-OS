@@ -26,6 +26,9 @@ const envSchema = z.object({
     .regex(/^[\w.-]+\/[\w.-]+$/, "Use the owner/name format")
     .optional(),
   GITHUB_TOKEN: z.string().optional(),
+  // Repos the dashboard may point agents at (comma-separated). Empty = any repo
+  // the token can access.
+  GITHUB_ALLOWED_REPOS: csv([]),
   GITHUB_BASE_BRANCH: z.string().default("main"),
   // Agents may only push to branches with this prefix
   AGENT_BRANCH_PREFIX: z.string().default("agent/"),
