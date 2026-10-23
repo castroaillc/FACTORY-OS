@@ -8,7 +8,7 @@ import { Command, MemorySaver, type StateSnapshot } from "@langchain/langgraph"
 import type { Decision, HITLRequest } from "langchain"
 
 import { config } from "./config.js"
-import { ensureWorkspace } from "./git.js"
+import { teamSandbox } from "./sandbox.js"
 import { createSdlTeam } from "./team.js"
 
 const task = process.argv.slice(2).join(" ").trim()
@@ -16,8 +16,6 @@ if (!task) {
   console.error('Usage: pnpm --filter agents start "<what to build>"')
   process.exit(1)
 }
-
-await ensureWorkspace()
 
 const agent = createSdlTeam({ checkpointer: new MemorySaver() })
 const runConfig = {
@@ -109,6 +107,7 @@ try {
   }
 } finally {
   rl.close()
+  await teamSandbox.dispose()
   // Make sure LangSmith receives the full trace before exiting
   await awaitAllCallbacks()
 }

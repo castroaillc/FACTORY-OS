@@ -2,7 +2,7 @@ import { tool } from "langchain"
 import { z } from "zod"
 
 import { config } from "../config.js"
-import { currentBranch, git } from "../git.js"
+import { baseRef, currentBranch, git } from "../git.js"
 import { lintCommitMessage } from "./commitlint.js"
 
 function toBranchSlug(value: string) {
@@ -60,11 +60,9 @@ export const gitDiff = tool(
 export const gitCreateBranch = tool(
   async ({ name }) => {
     const branch = `${config.AGENT_BRANCH_PREFIX}${toBranchSlug(name)}`
-    const base = config.GITHUB_BASE_BRANCH
-    if (config.GITHUB_TOKEN)
-      await git(["fetch", "origin", base], { auth: true })
-    await git(["switch", "-c", branch, `origin/${base}`])
-    return `Created and switched to ${branch} from origin/${base}.`
+    await git(["fetch", "origin", config.GITHUB_BASE_BRANCH])
+    await git(["switch", "-c", branch, baseRef()])
+    return `Created and switched to ${branch} from ${baseRef()}.`
   },
   {
     name: "git_create_branch",
@@ -105,7 +103,7 @@ export const gitPush = tool(
   async () => {
     const branch = await assertAgentBranch()
     // Plain push only: never --force
-    await git(["push", "--set-upstream", "origin", branch], { auth: true })
+    await git(["push", "--set-upstream", "origin", branch])
     return `Pushed ${branch} to origin.`
   },
   {

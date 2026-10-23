@@ -49,6 +49,5 @@ next-env.d.ts
 # payload local media uploads
 /apps/web/media
 
-# agents: cloned workspace and langgraph dev server state
-/apps/agents/workspace
+# agents: langgraph dev server state
 /apps/agents/.langgraph_api

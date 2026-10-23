@@ -1,7 +1,8 @@
 import type { BaseCheckpointSaver } from "@langchain/langgraph"
-import { createDeepAgent, LocalShellBackend, type SubAgent } from "deepagents"
+import { createDeepAgent, type SubAgent } from "deepagents"
 
 import { config } from "./config.js"
+import { teamSandbox } from "./sandbox.js"
 import {
   architectPrompt,
   engineerPrompt,
@@ -24,8 +25,7 @@ const model = config.SUBAGENT_MODEL
 const subagents: SubAgent[] = [
   {
     name: "architect",
-    description:
-      "Explores the codebase and writes an implementation plan to /.sdl/plan.md. Use first for any non-trivial change.",
+    description: `Explores the codebase and writes an implementation plan to ${config.SANDBOX_WORKDIR}/.sdl/plan.md. Use first for any non-trivial change.`,
     systemPrompt: architectPrompt,
     model,
     tools: [gitStatus],
@@ -78,27 +78,6 @@ const subagents: SubAgent[] = [
   },
 ]
 
-/**
- * Shell + filesystem rooted at the workspace clone. Commands run with a
- * scrubbed environment so model API keys and the GitHub token aren't readable.
- * This is NOT a sandbox: run it in a container or swap in a sandbox backend
- * (e.g. deepagents' LangSmithSandbox) before pointing it at untrusted input.
- */
-function createWorkspaceBackend() {
-  return new LocalShellBackend({
-    rootDir: config.workspaceDir,
-    virtualMode: true,
-    timeout: config.SHELL_TIMEOUT_SECONDS,
-    inheritEnv: false,
-    env: {
-      PATH: process.env.PATH ?? "",
-      HOME: process.env.HOME ?? "",
-      LANG: process.env.LANG ?? "en_US.UTF-8",
-      CI: "1",
-    },
-  })
-}
-
 export function createSdlTeam({
   checkpointer,
 }: { checkpointer?: BaseCheckpointSaver } = {}) {
@@ -107,7 +86,8 @@ export function createSdlTeam({
     model: config.ORCHESTRATOR_MODEL,
     systemPrompt: orchestratorPrompt,
     subagents,
-    backend: createWorkspaceBackend(),
+    // Every file and shell tool runs inside the LangSmith sandbox
+    backend: teamSandbox,
     checkpointer,
   })
 }
