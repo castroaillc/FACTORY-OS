@@ -53,7 +53,7 @@ const sections: { title: string; description: string; fields: Field[] }[] = [
   {
     title: "Models",
     description:
-      'Any "provider:model" supported by LangChain. The matching API key must be set on the agent server.',
+      'Any "provider:model" supported by LangChain, with its API key set on the agent server. For local models use "ollama:<model>" or "openai-compatible:<model>" (LM Studio, vLLM, llama.cpp); pick ones that support tool calling.',
     fields: [
       {
         name: "orchestratorModel",

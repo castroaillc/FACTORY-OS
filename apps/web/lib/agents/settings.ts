@@ -8,6 +8,11 @@ export const MODEL_SUGGESTIONS = [
   "anthropic:claude-haiku-5-5",
   "openai:gpt-5",
   "openai:gpt-5-mini",
+  // Local (on the agent server's machine); must support tool calling
+  "ollama:gpt-oss:20b",
+  "ollama:qwen3:32b",
+  "ollama:qwen2.5-coder:32b",
+  "openai-compatible:qwen2.5-coder-32b-instruct",
 ]
 
 const optional = (schema: z.ZodString) =>

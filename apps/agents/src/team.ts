@@ -1,8 +1,10 @@
 import type { BaseCheckpointSaver } from "@langchain/langgraph"
 import { createDeepAgent, type SubAgent } from "deepagents"
+import { todoListMiddleware } from "langchain"
 
 import { config } from "./config.js"
 import { createGit } from "./git.js"
+import { resolveModel } from "./models.js"
 import { buildPrompts } from "./prompts.js"
 import { getTeamSandbox, type TeamSandbox } from "./sandbox.js"
 import type { TeamSettings } from "./settings.js"
@@ -24,7 +26,7 @@ export function createSdlTeam(
   const { gitStatus, gitDiff, gitCreateBranch, gitCommit, gitPush } =
     createGitTools(git)
   const { openPullRequest } = createGitHubTools(git, settings)
-  const model = settings.subagentModel
+  const model = resolveModel(settings.subagentModel)
 
   const subagents: SubAgent[] = [
     {
@@ -84,9 +86,12 @@ export function createSdlTeam(
 
   return createDeepAgent({
     name: "sdl-team",
-    model: settings.orchestratorModel,
+    model: resolveModel(settings.orchestratorModel),
     systemPrompt: prompts.orchestrator,
     subagents,
+    // write_todos + `todos` state: the lead's plan, shown in the dashboard.
+    // deepagents only adds it for some harness profiles, so add it explicitly.
+    middleware: [todoListMiddleware()],
     // Every file and shell tool runs inside the LangSmith sandbox
     backend: sandbox,
     checkpointer,
