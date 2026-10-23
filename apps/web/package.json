@@ -13,21 +13,40 @@
     "auth:generate": "npx auth@latest generate --output lib/db/auth-schema.ts --yes",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "payload": "payload",
+    "generate:types": "payload generate:types",
+    "generate:importmap": "payload generate:importmap",
+    "payload:migrate": "payload migrate",
+    "payload:migrate:create": "payload migrate:create",
+    "payload:seed": "payload run payload/seed.ts"
   },
   "dependencies": {
+    "@next/third-parties": "^16.4.2",
+    "@payloadcms/db-postgres": "3.91.0",
+    "@payloadcms/next": "3.91.0",
+    "@payloadcms/plugin-seo": "3.91.0",
+    "@payloadcms/richtext-lexical": "3.91.0",
+    "@payloadcms/storage-vercel-blob": "3.91.0",
+    "@payloadcms/ui": "3.91.0",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "@workspace/ui": "workspace:*",
     "better-auth": "^1.7.12",
     "cn": "^0.5.0",
     "drizzle-orm": "^0.45.4",
+    "graphql": "^16.14.2",
     "lucide-react": "^1.61.0",
     "motion": "^14.6.0",
     "next": "16.4.2",
     "next-themes": "^0.4.6",
+    "payload": "3.91.0",
     "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-icons": "^5.7.0",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
     "zod": "^4.6.6"
   },
   "devDependencies": {
@@ -40,6 +59,7 @@
     "@workspace/typescript-config": "workspace:*",
     "drizzle-kit": "^0.31.11",
     "eslint": "^10",
+    "sass": "^1.106.1",
     "typescript": "^5"
   }
 }

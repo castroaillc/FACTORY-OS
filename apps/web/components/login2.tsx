@@ -9,6 +9,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Divider, SocialButtons } from "@/components/auth/social-buttons"
+import { track } from "@/lib/analytics"
 import { authClient } from "@/lib/auth-client"
 interface Login2Props {
   heading?: string
@@ -59,6 +60,7 @@ const Login2 = ({
       setPending(null)
       return
     }
+    track("login", { method: "email" })
     router.push(callbackURL)
     router.refresh()
   }
@@ -78,6 +80,7 @@ const Login2 = ({
       setError(error.message ?? "Could not send magic link")
       return
     }
+    track("magic_link_requested")
     setMagicLinkSentTo(emailInput.value)
   }
 

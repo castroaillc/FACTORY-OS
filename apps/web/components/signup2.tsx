@@ -9,6 +9,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Divider, SocialButtons } from "@/components/auth/social-buttons"
+import { track } from "@/lib/analytics"
 import { authClient } from "@/lib/auth-client"
 interface Signup2Props {
   heading?: string
@@ -59,6 +60,7 @@ const Signup2 = ({
       setPending(false)
       return
     }
+    track("sign_up", { method: "email" })
     router.push(callbackURL)
     router.refresh()
   }

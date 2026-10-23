@@ -28,6 +28,7 @@ interface FooterLogo {
 }
 
 interface FooterBasicProps {
+  legalExtra?: React.ReactNode
   logo?: FooterLogo
   description?: string
   sections?: FooterSection[]
@@ -114,6 +115,7 @@ const Footer7 = (props: Props) => {
     socialLinks,
     copyright,
     legalLinks,
+    legalExtra,
     className,
   } = {
     ...defaultProps,
@@ -176,6 +178,7 @@ const Footer7 = (props: Props) => {
                 <a href={link.href}> {link.name}</a>
               </li>
             ))}
+            {legalExtra && <li className="hover:text-primary">{legalExtra}</li>}
           </ul>
         </div>
       </div>
