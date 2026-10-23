@@ -1,3 +1,4 @@
+import { CookieSettingsButton } from "@/components/consent/cookie-settings-button"
 import { Footer7 } from "@/components/footer7"
 import { Navbar1 } from "@/components/navbar1"
 import { siteConfig } from "@/lib/site"
@@ -17,6 +18,7 @@ export default function MarketingLayout({
         className="py-16"
         logo={siteConfig.logo}
         description={siteConfig.description}
+        legalExtra={<CookieSettingsButton />}
         copyright={`© ${new Date().getFullYear()} ${siteConfig.name}. All rights reserved.`}
       />
     </div>

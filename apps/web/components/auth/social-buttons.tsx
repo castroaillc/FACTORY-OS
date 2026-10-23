@@ -4,6 +4,7 @@ import * as React from "react"
 import { FaGithub, FaGoogle } from "react-icons/fa"
 
 import { Button } from "@workspace/ui/components/button"
+import { track } from "@/lib/analytics"
 import { authClient } from "@/lib/auth-client"
 
 const providers = [
@@ -22,6 +23,7 @@ export function SocialButtons({
 
   async function signInWith(provider: (typeof providers)[number]["id"]) {
     setPending(provider)
+    track("social_auth_started", { provider })
     const { error } = await authClient.signIn.social({ provider, callbackURL })
     if (error) {
       onError(error.message ?? `Could not sign in with ${provider}`)
